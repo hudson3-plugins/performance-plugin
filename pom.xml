@@ -14,33 +14,61 @@
   <name>Performance plugin</name>
   <url>http://wiki.hudsonci.org/display/HUDSON/Performance+Plugin</url>
 
-  <developers>
+ <developers>
     <developer>
-      <id>manolo</id>
-      <name>Manuel Carrasco Monino</name>
-      <email>manolo@apache.org</email>
-    </developer>
-    <developer>
-      <id>vergnes</id>
-      <name>Vergnes</name>
-      <email>vergnes@dev.java.net</email>
-    </developer>
-    <developer>
-      <id>aespy</id>
-      <name>Arnaud Espy</name>
-      <email>aespy@dev.java.net</email>
+      <id>schristou88</id>
+      <name>Steven Christou</name>
+      <email>schristou88@gmail.com</email>
+      <roles>
+          <role>
+              Maintainer
+          </role>
+      </roles>
     </developer>
   </developers>
-  
+
+  <contributors>
+    <contributor>
+      <name>Manuel Carrasco Monino</name>
+      <email>manolo@apache.org</email>
+      <roles>
+        <role>
+          Original Developer
+        </role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Vergnes</name>
+      <email>vergnes@dev.java.net</email>
+      <roles>
+        <role>
+          Original Developer
+        </role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Arnaud Espy</name>
+      <email>aespy@dev.java.net</email>
+      <roles>
+        <role>
+          Original Developer
+        </role>
+      </roles>
+    </contributor>
+  </contributors>
+
   <licenses>
     <license>
-      <comments>No license information available</comments>
+      <name>The MIT license</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
+      <distribution>repo</distribution>
     </license>
   </licenses>
 
   <scm>
     <connection>scm:git:git://github.com/hudson3-plugins/performance-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:hudson3-plugins/performance-plugin.git</developerConnection>
+    <url>https://github.com/hudson3-plugins/performance-plugin</url>
   </scm>
 
   <dependencies>
