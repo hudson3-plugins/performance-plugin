@@ -14,7 +14,11 @@
   <name>Performance plugin</name>
   <url>http://wiki.hudsonci.org/display/HUDSON/Performance+Plugin</url>
 
- <developers>
+  <properties>
+    <hudsonTags>report</hudsonTags>
+  </properties>
+
+  <developers>
     <developer>
       <id>schristou88</id>
       <name>Steven Christou</name>
