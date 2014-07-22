@@ -63,6 +63,6 @@ public class PerformancePublisherTest extends HudsonTestCase {
 		wc.getPage(b, "performance");
 		wc
 				.getPage(b,
-						"performance/uriReport/test.jtl;Home.endperformanceparameter/");
+						"performance/uriReport/test.jtl:Home.endperformanceparameter/");
 	}
 }
