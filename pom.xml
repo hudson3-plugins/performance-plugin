@@ -12,7 +12,7 @@
   <packaging>hpi</packaging>
   <version>1.8-h-3-SNAPSHOT</version>
   <name>Performance plugin</name>
-  <url>http://wiki.hudsonci.org/display/HUDSON/Performance+Plugin</url>
+  <url>http://wiki.hudson-ci.org/display/HUDSON/Performance+Plugin</url>
 
   <properties>
     <hudsonTags>report</hudsonTags>
