@@ -17,6 +17,7 @@
 
     <properties>
         <hudsonTags>report</hudsonTags>
+        <maven-hpi-plugin.version>3.0.2</maven-hpi-plugin.version>
     </properties>
 
     <developers>
@@ -92,11 +93,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.eclipse.hudson.tools</groupId>
-                <artifactId>maven-hpi-plugin</artifactId>
-                <version>3.0.2</version>
-            </plugin>
             <!--
                   <plugin>
                     <groupId>com.relativitas.maven.plugins</groupId>
