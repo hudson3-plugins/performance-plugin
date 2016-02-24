@@ -205,6 +205,13 @@ public class PerformanceReport extends AbstractReport implements
       }
       return getAverage() - lastBuildReport.getAverage();
   }
+
+  public long getAverageDiffPercent() {
+    if (lastBuildReport == null) {
+      return 0;
+    }
+    return (getAverage() - lastBuildReport.getAverage()) * 100 / lastBuildReport.getAverage();
+  }
   
   public long getMedianDiff() {
       if ( lastBuildReport == null ) {

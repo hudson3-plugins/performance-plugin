@@ -183,6 +183,13 @@ public class UriReport extends AbstractReport implements ModelObject,
       }
       return getAverage() - lastBuildUriReport.getAverage();
   }
+
+  public long getAverageDiffPercent() {
+    if (lastBuildUriReport == null) {
+      return 0;
+    }
+    return (getAverage() - lastBuildUriReport.getAverage()) * 100 / lastBuildUriReport.getAverage();
+  }
   
   public long getMedianDiff() {
       if ( lastBuildUriReport == null ) {

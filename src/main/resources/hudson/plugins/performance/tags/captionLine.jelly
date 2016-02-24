@@ -7,6 +7,7 @@
     <th>${%samples diff}</th>
     <th>${%Average} (ms)</th>
     <th>${%Average diff} (ms)</th>
+    <th>${%Average diff} (%)</th>
     <th>${%Median} (ms)</th>
     <th>${%Median diff} (ms)</th>
     <th>${%Line90} (ms)</th>
