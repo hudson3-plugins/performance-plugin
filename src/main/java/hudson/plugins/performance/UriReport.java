@@ -2,7 +2,12 @@ package hudson.plugins.performance;
 
 import hudson.model.AbstractBuild;
 import hudson.model.ModelObject;
+import hudson.util.ChartUtil;
+import hudson.util.DataSetBuilder;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.*;
@@ -224,4 +229,43 @@ public class UriReport extends AbstractReport implements ModelObject,
       return size() - lastBuildUriReport.size();
   }
 
+  /**
+   * Build a trend graph for a single test
+   * @param request Request for generating the graph
+   * @param response Response to be populated
+   * @throws IOException In case the graph can not be generated.
+   */
+  public void doRespondingTimeGraph(StaplerRequest request, StaplerResponse response) throws IOException {
+
+    String xmlFile = performanceReport.getReportFileName();
+    DataSetBuilder<String, ChartUtil.NumberOnlyBuildLabel> dataSetBuilderAverage =
+            new DataSetBuilder<String, ChartUtil.NumberOnlyBuildLabel>();
+
+    AbstractBuild<?, ?> previousBuild = getBuild();
+    while (previousBuild != null) {
+
+      AbstractBuild<?, ?> currentBuild = previousBuild;
+      ChartUtil.NumberOnlyBuildLabel label = new ChartUtil.NumberOnlyBuildLabel(currentBuild);
+
+      PerformanceBuildAction performanceBuildAction = currentBuild.getAction(PerformanceBuildAction.class);
+      if (performanceBuildAction != null) {
+
+        PerformanceReport performanceReport =
+                performanceBuildAction.getPerformanceReportMap().getPerformanceReport(xmlFile);
+        if (performanceReport != null) {
+
+          UriReport uriReport = performanceReport.getDynamic(staplerUri);
+          if (uriReport != null) {
+            dataSetBuilderAverage.add(uriReport.getAverage(), Messages.ProjectAction_Average(), label);
+          }
+        }
+      }
+
+      previousBuild = previousBuild.getPreviousBuild();
+    }
+
+    ChartUtil.generateGraph(request, response,
+                            PerformanceProjectAction.createRespondingTimeChart(dataSetBuilderAverage.build()),
+                            400, 200);
+  }
 }

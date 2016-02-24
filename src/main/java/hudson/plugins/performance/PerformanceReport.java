@@ -130,7 +130,7 @@ public class PerformanceReport extends AbstractReport implements
   }
 
   public UriReport getDynamic(String token) throws IOException {
-    return getUriReportMap().get(token);
+    return getUriReportMap().getOrDefault(token, null);
   }
 
   public HttpSample getHttpSample() {
