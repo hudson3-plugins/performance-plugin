@@ -210,6 +210,10 @@ public class PerformanceReport extends AbstractReport implements
     if (lastBuildReport == null) {
       return 0;
     }
+    if (lastBuildReport.getAverage() == 0) {
+      // avoid division by 0
+      return 0;
+    }
     return (getAverage() - lastBuildReport.getAverage()) * 100 / lastBuildReport.getAverage();
   }
   

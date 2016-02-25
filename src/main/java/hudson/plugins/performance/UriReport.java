@@ -193,6 +193,10 @@ public class UriReport extends AbstractReport implements ModelObject,
     if (lastBuildUriReport == null) {
       return 0;
     }
+    if (lastBuildUriReport.getAverage() == 0) {
+      // avoid division by 0
+      return 0;
+    }
     return (getAverage() - lastBuildUriReport.getAverage()) * 100 / lastBuildUriReport.getAverage();
   }
   
