@@ -1,15 +1,29 @@
-<div>This plugin understands the <a
-	href="http://jakarta.apache.org/jmeter/">JMeter</a> analysis report XML
-format and the <a href="http://www.soapui.org/"> SOAPUI report in
-JUnit format</a>. <br/>
-This plug-in does not perform the actual analysis; it only
-displays useful information about analysis results, such as average
-responding time, historical result trend, web UI for viewing analysis
-reports, and so on.
+<div>
+    <p>
+        This plugin understands the <a href="http://jakarta.apache.org/jmeter/">JMeter</a> analysis report XML
+        format and the <a href="http://www.soapui.org/"> SOAPUI report in JUnit format</a>. <br/>
+        This plug-in does not perform the actual analysis; it only displays useful information about analysis
+        results, such as average responding time, historical result trend, web UI for viewing analysis reports,
+        and so on.
+    </p>
+    <p>
+        To use this feature, first set up your build to run tests, then select the adequate parser for your
+        tests (JMeter or JUnit) and finally you have to specify the path to the different performance XML files,
+        by default the plugin will use the <tt>**/*.jtl</tt> pattern for JMeter, and <tt>**/TEST*.xml</tt>
+        for JUnit tests.
+    </p>
 
-<p>
-To use this feature, first set up your build to run tests, then select the adequate parser for your tests (JMeter or JUnit) and finally
-you have to specify the path to the different performance XML files, by default the plugin will use the <tt>**/*.jtl</tt> pattern for
-JMeter, and <tt>**/TEST*.xml</tt> for JUnit tests.
-</p>
+    <p>
+        This plugin is capable to notify regression in performance (ms and percentage).
+        For example you could configure a build to fail when: <br/>
+
+        <tt>"Errors Count" > 3 OR ("Performance Regression" > 15% AND "Performance Regression Time" > 2000ms)</tt> <br/>
+
+        <b>NOTE:</b> Between Error and Performance thresholds OR boolean condition is applied, while between the
+        2 performance thresholds AND is applied. This happens, to allow avoidance of small test fluctuations: <br/>
+        E.g. if a Unit Test run-time increased from 1ms to 2ms, this is a regression of 100%, but is not relevant
+        for the performance of the application, as it probably fluctuates with the machine load at the moment of run;
+        while for a test of 20 seconds, an increase of 15% in run time, should point a performance regression in
+        the current implementation.
+    </p>
 </div>
