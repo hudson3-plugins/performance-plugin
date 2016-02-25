@@ -62,6 +62,8 @@ public abstract class AbstractReport {
   abstract public String getHttpCode();
 
   abstract public long getAverageDiff();
+
+  abstract public long getAverageDiffPercent();
   
   abstract public long getMedianDiff();
   

@@ -17,11 +17,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,9 +44,16 @@ public class PerformancePublisher extends Recorder {
     }
   }
 
-  private int errorFailedThreshold = 0;
+  private static final double THRESHOLD_TOLERANCE = 0.00000001;
 
+  private int errorFailedThreshold = 0;
   private int errorUnstableThreshold = 0;
+
+  private int performanceFailedThreshold = -1;
+  private int performanceUnstableThreshold = -1;
+
+  private int performanceTimeFailedThreshold = -1;
+  private int performanceTimeUnstableThreshold = -1;
 
   /**
    * @deprecated as of 1.3. for compatibility
@@ -63,13 +66,21 @@ public class PerformancePublisher extends Recorder {
   private List<PerformanceReportParser> parsers;
 
   @DataBoundConstructor
-  public PerformancePublisher(int errorFailedThreshold,
-      int errorUnstableThreshold,
-      List<? extends PerformanceReportParser> parsers) {
-    this.errorFailedThreshold = errorFailedThreshold;
-    this.errorUnstableThreshold = errorUnstableThreshold;
-    if (parsers == null)
+  public PerformancePublisher(int errorFailedThreshold, int errorUnstableThreshold,
+                              int performanceFailedThreshold, int performanceUnstableThreshold,
+                              int performanceTimeFailedThreshold, int performanceTimeUnstableThreshold,
+                              List<? extends PerformanceReportParser> parsers) {
+
+    this.setErrorFailedThreshold(errorFailedThreshold);
+    this.setErrorUnstableThreshold(errorUnstableThreshold);
+    this.setPerformanceFailedThreshold(performanceFailedThreshold);
+    this.setPerformanceUnstableThreshold(performanceUnstableThreshold);
+    this.setPerformanceTimeFailedThreshold(performanceTimeFailedThreshold);
+    this.setPerformanceTimeUnstableThreshold(performanceTimeUnstableThreshold);
+
+    if (parsers == null) {
       parsers = Collections.emptyList();
+    }
     this.parsers = new ArrayList<PerformanceReportParser>(parsers);
   }
 
@@ -172,59 +183,93 @@ public class PerformancePublisher extends Recorder {
     }
 
     // add the report to the build object.
-    PerformanceBuildAction a = new PerformanceBuildAction(build, logger,
-        parsers);
+    PerformanceBuildAction a = new PerformanceBuildAction(build, logger, parsers);
     build.addAction(a);
 
-    double thresholdTolerance = 0.00000001;
     for (PerformanceReportParser parser : parsers) {
       String glob = parser.glob;
-      logger.println("Performance: Recording " + parser.getReportName()
-          + " reports '" + glob + "'");
+      logger.println("Performance: Recording " + parser.getReportName() + " reports '" + glob + "'");
 
-      List<FilePath> files = locatePerformanceReports(build.getWorkspace(),
-          glob);
+      List<FilePath> files = locatePerformanceReports(build.getWorkspace(), glob);
 
       if (files.isEmpty()) {
         if (build.getResult().isWorseThan(Result.UNSTABLE)) {
           return true;
         }
         build.setResult(Result.FAILURE);
-        logger.println("Performance: no " + parser.getReportName()
-            + " files matching '" + glob
-            + "' have been found. Has the report generated?. Setting Build to "
-            + build.getResult());
+        logger.println("Performance: no " + parser.getReportName() + " files matching '" + glob +
+                       "' have been found. Has the report generated?. Setting Build to " + build.getResult());
         return true;
       }
 
-      List<File> localReports = copyReportsToMaster(build, logger, files,
-          parser.getDescriptor().getDisplayName());
-      Collection<PerformanceReport> parsedReports = parser.parse(build,
-          localReports, listener);
+      List<File> localReports = copyReportsToMaster(build, logger, files, parser.getDescriptor().getDisplayName());
+      Collection<PerformanceReport> parsedReports = parser.parse(build, localReports, listener);
+      Map<String, PerformanceReport> previousReports = loadPreviousReports(build);
 
       // mark the build as unstable or failure depending on the outcome.
       for (PerformanceReport r : parsedReports) {
         r.setBuildAction(a);
+        PerformanceReport lastReport = previousReports.getOrDefault(r.getReportFileName(), null);
+        if (lastReport != null) {
+          r.setLastBuildReport(lastReport);
+        }
+
         double errorPercent = r.errorPercent();
+        double diffTime = r.getAverageDiff();
+        double diffPercent = r.getAverageDiffPercent();
+
         Result result = Result.SUCCESS;
-        if (errorFailedThreshold >= 0 && errorPercent - errorFailedThreshold > thresholdTolerance) {
+        if (isFailure(errorPercent, diffTime, diffPercent)) {
           result = Result.FAILURE;
           build.setResult(Result.FAILURE);
-        } else if (errorUnstableThreshold >= 0
-            && errorPercent - errorUnstableThreshold > thresholdTolerance) {
+        } else if (isUnstable(errorPercent, diffTime, diffPercent)) {
           result = Result.UNSTABLE;
         }
         if (result.isWorseThan(build.getResult())) {
           build.setResult(result);
         }
-        logger.println("Performance: File " + r.getReportFileName()
-            + " reported " + errorPercent
-            + "% of errors [" + result + "]. Build status is: "
-            + build.getResult());
+        logger.println("Performance: File " + r.getReportFileName() + " reported " +
+                       errorPercent + "% of errors, " +
+                       diffPercent + "% (" + diffTime + " ms) in performance change " +
+                       "[" + result + "]. Build status is: " + build.getResult());
       }
     }
 
     return true;
+  }
+
+  private Map<String, PerformanceReport> loadPreviousReports(AbstractBuild<?, ?> currentBuild) {
+
+    AbstractBuild<?, ?> previousBuild = currentBuild.getPreviousBuild();
+    if ( previousBuild == null ) {
+      return Collections.emptyMap();
+    }
+
+    PerformanceBuildAction previousPerformanceAction = previousBuild.getAction(PerformanceBuildAction.class);
+    if ( previousPerformanceAction == null ) {
+      return Collections.emptyMap();
+    }
+
+    PerformanceReportMap previousPerformanceReportMap = previousPerformanceAction.getPerformanceReportMap();
+    if (previousPerformanceReportMap == null) {
+      return Collections.emptyMap();
+    }
+
+    return previousPerformanceReportMap.getPerformanceReportMap();
+  }
+
+  private boolean isFailure(double errorPercent, double diffTime, double diffPercent) {
+
+    return (errorFailedThreshold >= 0 && errorFailedThreshold + THRESHOLD_TOLERANCE < errorPercent) ||
+           (performanceFailedThreshold >= 0 && performanceFailedThreshold + THRESHOLD_TOLERANCE < diffPercent) &&
+           (performanceTimeFailedThreshold >= 0 && performanceTimeFailedThreshold + THRESHOLD_TOLERANCE < diffTime);
+  }
+
+  private boolean isUnstable(double errorPercent, double diffTime, double diffPercent) {
+
+    return (errorUnstableThreshold >= 0 && errorUnstableThreshold + THRESHOLD_TOLERANCE < errorPercent) ||
+           (performanceUnstableThreshold >= 0 && performanceUnstableThreshold + THRESHOLD_TOLERANCE < diffPercent) &&
+           (performanceTimeUnstableThreshold >= 0 && performanceTimeUnstableThreshold + THRESHOLD_TOLERANCE < diffTime);
   }
 
   private List<File> copyReportsToMaster(AbstractBuild<?, ?> build,
@@ -271,6 +316,38 @@ public class PerformancePublisher extends Recorder {
   public void setErrorUnstableThreshold(int errorUnstableThreshold) {
     this.errorUnstableThreshold = Math.max(0, Math.min(errorUnstableThreshold,
         100));
+  }
+
+  public int getPerformanceFailedThreshold() {
+    return performanceFailedThreshold;
+  }
+
+  public void setPerformanceFailedThreshold(int performanceFailedThreshold) {
+    this.performanceFailedThreshold = Math.max(0, Math.min(performanceFailedThreshold, 100));
+  }
+
+  public int getPerformanceTimeFailedThreshold() {
+    return performanceTimeFailedThreshold;
+  }
+
+  public void setPerformanceTimeFailedThreshold(int performanceTimeFailedThreshold) {
+    this.performanceTimeFailedThreshold = performanceTimeFailedThreshold;
+  }
+
+  public int getPerformanceUnstableThreshold() {
+    return performanceUnstableThreshold;
+  }
+
+  public void setPerformanceUnstableThreshold(int performanceUnstableThreshold) {
+    this.performanceUnstableThreshold = Math.max(0, Math.min(performanceUnstableThreshold, 100));
+  }
+
+  public int getPerformanceTimeUnstableThreshold() {
+    return performanceTimeUnstableThreshold;
+  }
+
+  public void setPerformanceTimeUnstableThreshold(int performanceTimeUnstableThreshold) {
+    this.performanceTimeUnstableThreshold = performanceTimeUnstableThreshold;
   }
 
   public String getFilename() {

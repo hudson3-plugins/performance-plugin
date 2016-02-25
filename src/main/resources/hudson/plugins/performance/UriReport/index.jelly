@@ -28,6 +28,9 @@
           </tr>
         </j:forEach>
       </table>
+
+      <h3>${%Performance Breakdown}</h3>
+      <img class="trend" src="./respondingTimeGraph?width=600&amp;height=225&amp;" width="600" height="225" />
     </l:main-panel>
   </l:layout>
 </j:jelly>

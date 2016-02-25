@@ -9,7 +9,6 @@ import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.TestBuilder;
 
 import java.io.IOException;
-import java.util.List;
 
 import static java.util.Arrays.asList;
 
@@ -17,52 +16,45 @@ import static java.util.Arrays.asList;
  * @author Kohsuke Kawaguchi
  */
 public class PerformancePublisherTest extends HudsonTestCase {
-	public void testConfigRoundtrip() throws Exception {
-		PerformancePublisher before = new PerformancePublisher(10, 20,
-				asList(new JMeterParser("**/*.jtl")));
 
-		FreeStyleProject p = createFreeStyleProject();
-		p.addPublisher(before);
-		submit(createWebClient().getPage(p, "configure")
-				.getFormByName("config"));
+        public void testConfigRoundtrip() throws Exception {
+                PerformancePublisher before =
+                        new PerformancePublisher(10, 20, 0, 0, 0, 0, asList(new JMeterParser("**/*.jtl")));
 
-		PerformancePublisher after = p.getPublishersList().get(
-				PerformancePublisher.class);
-		assertEqualBeans(before, after,
-				"errorFailedThreshold,errorUnstableThreshold");
-		assertEquals(before.getParsers().size(), after.getParsers().size());
-		assertEqualBeans(before.getParsers().get(0), after.getParsers().get(0),
-				"glob");
-		assertEquals(before.getParsers().get(0).getClass(), after.getParsers()
-				.get(0).getClass());
-	}
+                FreeStyleProject p = createFreeStyleProject();
+                p.addPublisher(before);
+                submit(createWebClient().getPage(p, "configure").getFormByName("config"));
 
-	public void testBuild() throws Exception {
-		FreeStyleProject p = createFreeStyleProject();
-		p.getBuildersList().add(new TestBuilder() {
-			@Override
-			public boolean perform(AbstractBuild<?, ?> build,
-					Launcher launcher, BuildListener listener)
-					throws InterruptedException, IOException {
-				build.getWorkspace().child("test.jtl").copyFrom(
-						getClass().getResource("/JMeterResults.jtl"));
-				return true;
-			}
-		});
-		p.addPublisher(
-				new PerformancePublisher(0, 0, asList(new JMeterParser(
-						"**/*.jtl"))));
+                PerformancePublisher after = p.getPublishersList().get(PerformancePublisher.class);
+                assertEqualBeans(before, after, "errorFailedThreshold,errorUnstableThreshold");
+                assertEqualBeans(before, after, "performanceFailedThreshold,performanceUnstableThreshold");
+                assertEqualBeans(before, after, "performanceTimeFailedThreshold,performanceTimeUnstableThreshold");
+                assertEquals(before.getParsers().size(), after.getParsers().size());
+                assertEqualBeans(before.getParsers().get(0), after.getParsers().get(0), "glob");
+                assertEquals(before.getParsers().get(0).getClass(), after.getParsers().get(0).getClass());
+        }
 
-		FreeStyleBuild b = assertBuildStatusSuccess(p.scheduleBuild2(0).get());
+        public void testBuild() throws Exception {
+                FreeStyleProject p = createFreeStyleProject();
+                p.getBuildersList().add(new TestBuilder() {
+                        @Override
+                        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
+                                throws InterruptedException, IOException {
+                                build.getWorkspace().child("test.jtl")
+                                        .copyFrom(getClass().getResource("/JMeterResults.jtl"));
+                                return true;
+                        }
+                });
+                p.addPublisher(new PerformancePublisher(0, 0, 0, 0, 0, 0, asList(new JMeterParser("**/*.jtl"))));
 
-		PerformanceBuildAction a = b.getAction(PerformanceBuildAction.class);
-		assertNotNull(a);
+                FreeStyleBuild b = assertBuildStatusSuccess(p.scheduleBuild2(0).get());
 
-		// poke a few random pages to verify rendering
-		WebClient wc = createWebClient();
-		wc.getPage(b, "performance");
-		wc
-				.getPage(b,
-						"performance/uriReport/test.jtl:Home.endperformanceparameter/");
-	}
+                PerformanceBuildAction a = b.getAction(PerformanceBuildAction.class);
+                assertNotNull(a);
+
+                // poke a few random pages to verify rendering
+                WebClient wc = createWebClient();
+                wc.getPage(b, "performance");
+                wc.getPage(b, "performance/uriReport/test.jtl:Home.endperformanceparameter/");
+        }
 }

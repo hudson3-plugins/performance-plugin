@@ -5,6 +5,7 @@
   <td class="${h.ifThenElse(it.getSizeDiff()>=0,'green','red')}">${it.getSizeDiff()}</td>
   <td>${it.getAverage()}</td>
   <td class="${h.ifThenElse(it.getAverageDiff()>0,'red','green')}">${it.getAverageDiff()}</td>
+  <td class="${h.ifThenElse(it.getAverageDiffPercent()>0,'red','green')}">${it.getAverageDiffPercent()}</td>
   <td>${it.getMedian()}</td>
   <td class="${h.ifThenElse(it.getMedianDiff()>0,'red','green')}">${it.getMedianDiff()}</td>
   <td>${it.get90Line()}</td>

@@ -130,7 +130,7 @@ public class PerformanceReport extends AbstractReport implements
   }
 
   public UriReport getDynamic(String token) throws IOException {
-    return getUriReportMap().get(token);
+    return getUriReportMap().getOrDefault(token, null);
   }
 
   public HttpSample getHttpSample() {
@@ -204,6 +204,17 @@ public class PerformanceReport extends AbstractReport implements
           return 0;
       }
       return getAverage() - lastBuildReport.getAverage();
+  }
+
+  public long getAverageDiffPercent() {
+    if (lastBuildReport == null) {
+      return 0;
+    }
+    if (lastBuildReport.getAverage() == 0) {
+      // avoid division by 0
+      return 0;
+    }
+    return (getAverage() - lastBuildReport.getAverage()) * 100 / lastBuildReport.getAverage();
   }
   
   public long getMedianDiff() {
